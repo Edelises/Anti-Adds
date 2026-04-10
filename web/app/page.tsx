@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [threshold, setThreshold] = useState(75);
   const [jitter, setJitter] = useState(5);
   const [logs, setLogs] = useState<string[]>([]);
+  const [adsClosed, setAdsClosed] = useState(0);
   const lastLogCountRef = useRef(0);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -35,6 +36,7 @@ export default function Dashboard() {
         setIsRunning(data.is_running);
         setHasPermission(data.has_permission);
         setMode(data.mode || "macbook");
+        setAdsClosed(data.ads_closed || 0);
 
         if (data.config) {
           setThreshold(Math.round(data.config.threshold * 100));
@@ -157,14 +159,14 @@ export default function Dashboard() {
       </header>
 
       {/* ── LEFT SIDEBAR: CONFIG ── */}
-      <aside className="fixed left-0 top-[60px] bottom-0 w-[100px] border-r border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30">
-        <div className="flex flex-col items-center gap-3">
-           <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em]">Sensitivity</span>
+      <aside className="fixed left-0 top-[60px] bottom-0 w-[120px] border-r border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30 overflow-y-auto hide-scrollbar">
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center">
+           <span className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em]">Sensitivity</span>
            <button 
              onClick={() => updateConfig('threshold', threshold + 5)} 
              data-tooltip="Increase AI Confidence"
              data-tooltip-dir="right"
-             className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col items-center justify-center hover:bg-cyan-500/10 transition-all text-cyan-400"
+             className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col items-center justify-center hover:bg-cyan-500/10 transition-all text-cyan-400 group"
            >
               <span className="text-[11px] font-black">{threshold}</span>
               <span className="text-[6px] opacity-40">%</span>
@@ -177,10 +179,11 @@ export default function Dashboard() {
            >
              − 0.05
            </button>
+           <p className="text-[6px] font-black text-white/10 uppercase leading-none mt-1 tracking-tighter">AI Prediction<br/>Precision</p>
         </div>
 
-        <div className="flex flex-col items-center gap-3">
-           <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em]">Bypass</span>
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center">
+           <span className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em]">Bypass</span>
            <button 
              onClick={() => setAutoClick(!autoClick)} 
              data-tooltip={autoClick ? "Disable Auto-Bypass" : "Enable Auto-Bypass"}
@@ -189,10 +192,11 @@ export default function Dashboard() {
            >
              <Zap className="w-5 h-5" />
            </button>
+           <p className="text-[6px] font-black text-white/10 uppercase leading-none mt-1 tracking-tighter">Auto-Click<br/>Interceptor</p>
         </div>
 
-        <div className="flex flex-col items-center gap-3">
-           <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em]">Engine</span>
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center">
+           <span className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em]">Engine</span>
            <button 
              onClick={() => setScanInterval(scanInterval === 100 ? 500 : 100)} 
              data-tooltip={scanInterval === 100 ? "Set Engine to ECO Mode" : "Set Engine to FAST Mode"}
@@ -201,28 +205,44 @@ export default function Dashboard() {
            >
              <Activity className="w-5 h-5" />
            </button>
+           <p className="text-[6px] font-black text-white/10 uppercase leading-none mt-1 tracking-tighter">Scan Cycle<br/>Velocity</p>
         </div>
 
-        <button 
-           onClick={() => setIsTerminalExpanded(!isTerminalExpanded)}
-           data-tooltip={isTerminalExpanded ? "Hide Telemetry" : "Show Telemetry"}
-           data-tooltip-dir="right"
-           className={`mt-auto w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isTerminalExpanded ? 'bg-white/10 text-white' : 'bg-white/5 text-white/10'}`}
-        >
-           <Globe className="w-5 h-5" />
-        </button>
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center mt-auto">
+          <button 
+             onClick={() => setIsTerminalExpanded(!isTerminalExpanded)}
+             data-tooltip={isTerminalExpanded ? "Hide Telemetry" : "Show Telemetry"}
+             data-tooltip-dir="right"
+             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isTerminalExpanded ? 'bg-white/10 text-white' : 'bg-white/5 text-white/10'}`}
+          >
+             <Globe className="w-5 h-5" />
+          </button>
+          <p className="text-[6px] font-black text-white/10 uppercase tracking-tighter">Terminal<br/>Link</p>
+        </div>
       </aside>
 
       {/* ── RIGHT SIDEBAR: TELEMETRY ── */}
-      <aside className="fixed right-0 top-[60px] bottom-0 w-[100px] border-l border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30">
-        <MetricSide label="Engine" value={isRunning ? "14%" : "0%"} icon={<Cpu className="w-4 h-4 text-cyan-400" />} tooltip="Current CPU Load" dir="left" />
-        <MetricSide label="Latency" value={isRunning ? "38ms" : "--"} icon={<Globe className="w-4 h-4 text-purple-400" />} tooltip="Network Roundtrip" dir="left" />
-        <MetricSide label="Detected" value="NONE" icon={<Zap className="w-4 h-4 text-emerald-400" />} tooltip="Ad Elements Caught" dir="left" />
-        <MetricSide label="Health" value="ULTRA" icon={<Activity className="w-4 h-4 text-white/20" />} tooltip="System Integrity" dir="left" />
+      <aside className="fixed right-0 top-[60px] bottom-0 w-[120px] border-l border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30 overflow-y-auto hide-scrollbar">
+        <div className="flex flex-col items-center gap-1.5 w-full text-center">
+          <MetricSide label="Engine" value={isRunning ? "14%" : "0%"} icon={<Cpu className="w-4 h-4 text-cyan-400" />} tooltip="Current CPU Load" dir="left" />
+          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">System<br/>Compute</p>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 w-full text-center">
+          <MetricSide label="Latency" value={isRunning ? "38ms" : "--"} icon={<Globe className="w-4 h-4 text-purple-400" />} tooltip="Network Roundtrip" dir="left" />
+          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">Response<br/>Delay</p>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 w-full text-center">
+          <MetricSide label="Detected" value={adsClosed > 0 ? adsClosed.toString() : "NONE"} icon={<Zap className="w-4 h-4 text-emerald-400" />} tooltip="Ad Elements Caught" dir="left" />
+          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">Bypass<br/>Counter</p>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 w-full text-center">
+          <MetricSide label="Health" value="ULTRA" icon={<Activity className="w-4 h-4 text-white/20" />} tooltip="System Integrity" dir="left" />
+          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">Core<br/>Stability</p>
+        </div>
       </aside>
 
       {/* ── MAIN WORKSPACE ── */}
-      <main className="fixed top-[60px] bottom-0 left-[100px] right-[100px] z-10 p-0 flex">
+      <main className="fixed top-[60px] bottom-0 left-[120px] right-[120px] z-10 p-0 flex">
         
         <div className="flex-1 flex min-h-0 relative">
           
