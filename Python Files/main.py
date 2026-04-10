@@ -30,7 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import sys
 import traceback
-from PIL import Image
+from PIL import Image, ImageDraw
 from detector import Detector
 from clicker import Clicker
 
@@ -389,17 +389,15 @@ def automation_loop():
             state["last_screenshot"] = full_screenshot
 
             # ── 2. ROI Selection ──
-            if state["mode"] == "iphone":
-                if state["iphone_window_id"] is None:
-                    wid = get_iphone_window_id()
-                    if wid:
-                        state["iphone_window_id"] = wid
-                        add_log(f"📱 iPhone Link Active (ID: {wid})")
-                    else:
-                        time.sleep(1)
-                        continue
+            # Always try to locate the iPhone window to either focus on it OR mask it out
+            if state["iphone_window_id"] is None:
+                wid = get_iphone_window_id()
+                if wid:
+                    state["iphone_window_id"] = wid
+                    add_log(f"📱 iPhone Link Active (ID: {wid})")
 
-                # Refresh iPhone Window ROI
+            # Refresh iPhone Window ROI
+            if state["iphone_window_id"]:
                 try:
                     windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
                     for w in windows:
@@ -409,11 +407,27 @@ def automation_loop():
                             break
                 except: pass
 
+            if state["mode"] == "iphone":
+                if not state.get("mirror_roi"):
+                    time.sleep(1)
+                    continue
                 active_roi = state["mirror_roi"]
                 full_window_roi = state["mirror_roi"]
             else:
                 active_roi = top_right_roi
                 full_window_roi = (0, 0, screen_w, screen_h)
+                
+                # Macbook Mode: Physically mask out the iPhone window to prevent cross-contamination
+                if state.get("mirror_roi"):
+                    draw = ImageDraw.Draw(full_screenshot)
+                    rx, ry, rw, rh = state["mirror_roi"]
+                    
+                    # Account for macos retina pixel scaling
+                    is_retina = full_screenshot.height > 1200
+                    if is_retina:
+                        draw.rectangle([rx*2, ry*2, (rx+rw)*2, (ry+rh)*2], fill="black")
+                    else:
+                        draw.rectangle([rx, ry, rx+rw, ry+rh], fill="black")
 
             # ── 3. High-Precision Detection ──
             found = None
