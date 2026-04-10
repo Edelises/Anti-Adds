@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [isConnected, setIsConnected] = useState(false);
   const [hasPermission, setHasPermission] = useState(true);
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
-  const [mode, setMode] = useState("macbook");
+  const [mode, setMode] = useState("iphone");
   const [threshold, setThreshold] = useState(75);
   const [jitter, setJitter] = useState(5);
   const [logs, setLogs] = useState<string[]>([]);
@@ -24,31 +24,29 @@ export default function Dashboard() {
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleRestart = async () => {
-    if (!confirm("Fully restart backend engine and refresh interface?")) return;
-    
     try {
       setLogs(prev => [...prev, "[SYSTEM] Restarting Core Services..."]);
       await fetch(`${API}/restart`, { method: "POST" });
-      
-      // Give the backend time to die and uvicorn/host to reboot it
       setTimeout(() => {
         window.location.reload();
       }, 2500);
     } catch (err) {
-      // If it fails, the backend might already be down or restarting
       window.location.reload();
     }
   };
 
   const handleShutdown = async () => {
-    if (!confirm("Permanently shutdown backend engine? Interface will go offline.")) return;
-    
     try {
-      setLogs(prev => [...prev, "[SYSTEM] Terminating Backend Engine..."]);
+      setLogs(prev => [...prev, "[SYSTEM] Terminating Backend Engine & Application..."]);
       await fetch(`${API}/shutdown`, { method: "POST" });
       setIsConnected(false);
       setIsRunning(false);
       setLogs(prev => [...prev, "🛑 SYSTEM OFFLINE"]);
+      
+      // Close window via Tauri API if available, else just leave it offline
+      if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+          (window as any).__TAURI__.process.exit(0);
+      }
     } catch (err) {
       console.error("Shutdown failed:", err);
     }
@@ -60,6 +58,7 @@ export default function Dashboard() {
 
   // Sequential Polling
   const pollStatus = async () => {
+    let delay = 500;
     try {
       const resp = await fetch(`${API}/status`);
       if (resp.ok) {
@@ -80,11 +79,14 @@ export default function Dashboard() {
           lastLogCountRef.current = newLogs.length;
           setLogs(newLogs);
         }
+      } else {
+        throw new Error("HTTP error");
       }
     } catch (err) {
       setIsConnected(false);
+      delay = 3000; // Exponential backoff / slow down on error to prevent spam
     } finally {
-      pollTimerRef.current = setTimeout(pollStatus, 500);
+      pollTimerRef.current = setTimeout(pollStatus, delay);
     }
   };
 
@@ -97,7 +99,6 @@ export default function Dashboard() {
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const toggleAutomation = async () => {
-    if (!isConnected) return;
     try {
         await fetch(`${API}/toggle`, { method: "POST" });
         setIsRunning(prev => !prev);
@@ -120,7 +121,7 @@ export default function Dashboard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: m }),
-    });
+    }).catch(() => {});
   };
 
   const updateConfig = (key: string, val: any) => {
@@ -133,7 +134,7 @@ export default function Dashboard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [key]: key === 'threshold' ? val/100 : val }),
-    });
+    }).catch(() => {});
   };
 
   const ts = Date.now();
@@ -147,7 +148,7 @@ export default function Dashboard() {
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/[0.03] blur-[150px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/[0.03] blur-[150px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20 mix-blend-overlay" />
       </div>
 
       {/* ── Header (Ultra Slim) ── */}
@@ -184,10 +185,9 @@ export default function Dashboard() {
           <div className="flex items-center bg-white/[0.03] border border-white/[0.05] p-1 rounded-2xl gap-1">
             <button
               onClick={toggleAutomation}
-              disabled={!isConnected}
               data-tooltip={isRunning ? "Terminate Engine" : "Ignite Engine"}
               className={`h-9 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
-                !isConnected ? "opacity-20 cursor-not-allowed" : 
+                !isConnected ? "bg-white/5 text-white/20 hover:bg-white/10" : 
                 isRunning ? "bg-red-500/10 border border-red-500/20 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : 
                 "bg-white text-black hover:scale-105"
               }`}

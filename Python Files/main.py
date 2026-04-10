@@ -114,8 +114,12 @@ def get_iphone_window_id():
         )
         for w in windows:
             owner = w.get("kCGWindowOwnerName", "")
-            if "iPhone Mirroring" in owner:
-                return int(w["kCGWindowNumber"])
+            layer = w.get("kCGWindowLayer", 0)
+            if "iPhone Mirroring" in owner and layer == 0:
+                b = w.get("kCGWindowBounds", {})
+                # Must be a reasonably sized window, not a tiny tooltip/shadow
+                if b.get("Height", 0) > 200:
+                    return int(w["kCGWindowNumber"])
     except Exception: pass
     return None
 
@@ -155,7 +159,7 @@ def has_screen_recording_permission():
 # ─── Global State ────────────────────────────────────────────────────────────
 state = {
     "is_running": True,  # Enable by default so it's ready on launch
-    "mode": "macbook",   # default mode
+    "mode": "iphone",    # Default to iphone to enforce rules and prevent macbook cross-contamination
     "has_permission": True, # Assume true, will check in loop
     "permission_warning_sent": False,
     "last_detection": "System Initialized",
@@ -243,6 +247,34 @@ def set_mode(data: dict):
     state["last_iphone_screenshot"] = None
     add_log(f"🔀 Mode switched to {state['mode']}")
     return {"status": "success", "mode": state["mode"]}
+
+
+@app.post("/restart")
+def restart_backend():
+    """Forcefully restart the backend Python process."""
+    add_log("🔄 Core System Restart Initiated...")
+    # Give a brief moment for the return response to flush, then restart
+    def do_restart():
+        time.sleep(0.5)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+    threading.Thread(target=do_restart, daemon=True).start()
+    return {"status": "restarting"}
+
+
+@app.post("/shutdown")
+def shutdown_backend():
+    """Kill everything: Backend (port 8000), Frontend (port 3000), and Tauri processes."""
+    add_log("🛑 Initiating Full System Shutdown...")
+    def do_shutdown():
+        time.sleep(0.5)
+        # Kill anything bound to 3000 or 8000
+        os.system("lsof -ti :3000,8000 | xargs kill -9 2>/dev/null || true")
+        # Kill Tauri and custom binary processes
+        os.system("pkill -9 -f 'Anti-Ads' 2>/dev/null || true")
+        os.system("pkill -9 -f 'tauri' 2>/dev/null || true")
+        os._exit(0)
+    threading.Thread(target=do_shutdown, daemon=True).start()
+    return {"status": "shutting_down"}
 
 
 @app.post("/config")
@@ -400,11 +432,16 @@ def automation_loop():
             if state["iphone_window_id"]:
                 try:
                     windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
+                    found_win = False
                     for w in windows:
                         if int(w.get("kCGWindowNumber", 0)) == state["iphone_window_id"]:
                             b = w["kCGWindowBounds"]
                             state["mirror_roi"] = (int(b["X"]), int(b["Y"]), int(b["Width"]), int(b["Height"]))
+                            found_win = True
                             break
+                    if not found_win:
+                        state["iphone_window_id"] = None
+                        state["mirror_roi"] = None
                 except: pass
 
             if state["mode"] == "iphone":
@@ -413,6 +450,25 @@ def automation_loop():
                     continue
                 active_roi = state["mirror_roi"]
                 full_window_roi = state["mirror_roi"]
+                
+                # iPhone Mode: Physically restrict the AI by blacking out the entire MacBook view
+                draw = ImageDraw.Draw(full_screenshot)
+                rx, ry, rw, rh = state["mirror_roi"]
+                
+                is_retina = full_screenshot.height > 1200
+                if is_retina:
+                    rx, ry, rw, rh = rx*2, ry*2, rw*2, rh*2
+                    
+                # Store standalone cropped view for iPhone Dashboard
+                try:
+                    state["last_iphone_screenshot"] = full_screenshot.crop((rx, ry, rx+rw, ry+rh))
+                except Exception: pass
+                
+                sw, sh = full_screenshot.size
+                draw.rectangle([0, 0, sw, ry], fill="black") # Top
+                draw.rectangle([0, ry+rh, sw, sh], fill="black") # Bottom
+                draw.rectangle([0, ry, rx, ry+rh], fill="black") # Left
+                draw.rectangle([rx+rw, ry, sw, ry+rh], fill="black") # Right
             else:
                 active_roi = top_right_roi
                 full_window_roi = (0, 0, screen_w, screen_h)
