@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "lsof -ti :3000,8000 | xargs kill -9 2>/dev/null || true && (python3 \"Python Files/main.py\" &) && npm install --prefix web && npm --prefix web run dev"
+    "dev": "lsof -ti :3000,8000 | xargs kill -9 2>/dev/null || true && (python3 \"Python Files/main.py\" &) && npm install --prefix web && npm --prefix web run dev",
+    "desktop": "lsof -ti :3000,8000 | xargs kill -9 2>/dev/null || true && (python3 \"Python Files/main.py\" &) && npm --prefix web run tauri dev",
+    "desktop:build": "npm --prefix web run tauri build"
   }
 }

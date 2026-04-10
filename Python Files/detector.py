@@ -89,8 +89,11 @@ class Detector:
         
         return best_match
 
-    def detect_text(self, screenshot, target_texts, roi=None):
+    def detect_text(self, screenshot, target_texts, roi=None, banned_texts=None):
         """Use OCR to find specific text items. target_texts can be a list."""
+        if banned_texts is None:
+            banned_texts = ["play now", "okay"]
+
         try:
             frame = np.array(screenshot)
             offset_x, offset_y = 0, 0
@@ -114,18 +117,57 @@ class Detector:
             
             # Simple OCR run
             d = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
+            
+            # Group by line_num (and block/par) to check multi-word contexts
+            lines = {}
             for i in range(len(d['text'])):
                 text = d['text'][i].strip().lower()
-                if not text: continue
+                if not text:
+                    continue
                 
+                # Create a unique key for the line
+                line_key = (d['block_num'][i], d['par_num'][i], d['line_num'][i])
+                if line_key not in lines:
+                    lines[line_key] = {"text": [], "boxes": []}
+                
+                lines[line_key]["text"].append(text)
+                lines[line_key]["boxes"].append((d['left'][i], d['top'][i], d['width'][i], d['height'][i]))
+                
+            # Now evaluate each line
+            for line_key, line_data in lines.items():
+                full_line_text = " ".join(line_data["text"])
+                
+                # Check for banned texts anywhere in this line
+                is_banned = False
+                for b_text in banned_texts:
+                    if b_text.lower() in full_line_text:
+                        is_banned = True
+                        break
+                
+                if is_banned:
+                    continue
+                    
+                # Check targets
                 for target in target_texts:
-                    if target.lower() in text:
-                        tx, ty, tw, th = d['left'][i], d['top'][i], d['width'][i], d['height'][i]
-                        fx, fy = (tx + tw // 2 + offset_x), (ty + th // 2 + offset_y)
+                    # Look for target in the full line
+                    if target.lower() in full_line_text:
+                        # We found a matching line! Compute center of the FIRST matching word box
+                        # or just the center of the whole bounding box of the line.
+                        # Let's take the bounding box of the entire line for safety.
+                        x_min = min(b[0] for b in line_data["boxes"])
+                        y_min = min(b[1] for b in line_data["boxes"])
+                        x_max = max(b[0] + b[2] for b in line_data["boxes"])
+                        y_max = max(b[1] + b[3] for b in line_data["boxes"])
+                        
+                        fx = (x_min + (x_max - x_min) // 2) + offset_x
+                        fy = (y_min + (y_max - y_min) // 2) + offset_y
+                        
                         if is_retina:
                             fx //= 2
                             fy //= 2
+                            
                         return (fx, fy)
+                        
         except Exception as e:
             # Tesseract not found or crashed
             pass

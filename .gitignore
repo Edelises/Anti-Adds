@@ -4,3 +4,9 @@ node_modules/
 *.test.png
 test_cap.png
 iphone_test.png
+.DS_Store
+scratch/
+build/
+*.app/
+*.exe
+*.dmg

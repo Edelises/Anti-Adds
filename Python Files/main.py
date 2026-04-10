@@ -213,7 +213,9 @@ def automation_loop():
     screen_w, screen_h = pyautogui.size()
     top_right_roi = (screen_w // 2, 0, screen_w // 2, screen_h // 2)
 
-    text_targets = ["Skip", "Close", "Ad", "Sponsored"]
+    # Ordered list of text to click. "watch" / "more ads" is highest priority.
+    # We DO NOT include "play" or "okay" so we completely avoid "Play now" options.
+    text_targets = ["watch", "more ads", "skip", "close", "sponsored", "ad"]
 
     while True:
         # Idle when paused
