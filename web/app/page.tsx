@@ -5,6 +5,7 @@ import {
   Activity, Smartphone, 
   Cpu, Zap, Globe, Eraser
 } from "lucide-react";
+import { TerminalView } from "./TerminalView";
 
 const API = "http://localhost:8000";
 
@@ -159,85 +160,85 @@ export default function Dashboard() {
       </header>
 
       {/* ── LEFT SIDEBAR: CONFIG ── */}
-      <aside className="fixed left-0 top-[60px] bottom-0 w-[120px] border-r border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30 overflow-y-auto hide-scrollbar">
-        <div className="flex flex-col items-center gap-3 w-full px-2 text-center">
-           <span className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em]">Sensitivity</span>
+      <aside className="fixed left-0 top-[60px] bottom-0 w-[120px] border-r border-white/[0.05] bg-black/40 flex flex-col items-center py-8 gap-10 z-[100]">
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center group">
+           <span className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors">Sensitivity</span>
            <button 
              onClick={() => updateConfig('threshold', threshold + 5)} 
              data-tooltip="Increase AI Confidence"
              data-tooltip-dir="right"
-             className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col items-center justify-center hover:bg-cyan-500/10 transition-all text-cyan-400 group"
+             className="w-12 h-12 rounded-2xl bg-white/[0.08] border border-white/10 flex flex-col items-center justify-center hover:bg-cyan-500/10 transition-all text-cyan-400 shadow-lg active:scale-95"
            >
-              <span className="text-[11px] font-black">{threshold}</span>
-              <span className="text-[6px] opacity-40">%</span>
+              <span className="text-[12px] font-black">{threshold}</span>
+              <span className="text-[7px] opacity-40">%</span>
            </button>
            <button 
              onClick={() => updateConfig('threshold', threshold - 5)} 
              data-tooltip="Reduce Threshold"
              data-tooltip-dir="right"
-             className="text-[8px] font-black text-white/10 hover:text-white/30 transition-colors"
+             className="text-[9px] font-black text-white/30 hover:text-white/70 transition-colors"
            >
              − 0.05
            </button>
-           <p className="text-[6px] font-black text-white/10 uppercase leading-none mt-1 tracking-tighter">AI Prediction<br/>Precision</p>
+           <p className="text-[8px] font-bold text-white/60 uppercase leading-tight mt-1 px-1">AI Prediction<br/>Precision</p>
         </div>
 
-        <div className="flex flex-col items-center gap-3 w-full px-2 text-center">
-           <span className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em]">Bypass</span>
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center group">
+           <span className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors">Bypass</span>
            <button 
              onClick={() => setAutoClick(!autoClick)} 
              data-tooltip={autoClick ? "Disable Auto-Bypass" : "Enable Auto-Bypass"}
              data-tooltip-dir="right"
-             className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${autoClick ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.4)] text-black border-cyan-400' : 'bg-white/5 border-white/10 text-white/20'}`}
+             className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all active:scale-95 ${autoClick ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.4)] text-black border-cyan-400 font-black' : 'bg-white/8 border-white/10 text-white/20'}`}
            >
              <Zap className="w-5 h-5" />
            </button>
-           <p className="text-[6px] font-black text-white/10 uppercase leading-none mt-1 tracking-tighter">Auto-Click<br/>Interceptor</p>
+           <p className="text-[8px] font-bold text-white/60 uppercase leading-tight mt-1 px-1">Auto-Click<br/>Interceptor</p>
         </div>
 
-        <div className="flex flex-col items-center gap-3 w-full px-2 text-center">
-           <span className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em]">Engine</span>
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center group">
+           <span className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em] group-hover:text-purple-400 transition-colors">Engine</span>
            <button 
              onClick={() => setScanInterval(scanInterval === 100 ? 500 : 100)} 
              data-tooltip={scanInterval === 100 ? "Set Engine to ECO Mode" : "Set Engine to FAST Mode"}
              data-tooltip-dir="right"
-             className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${scanInterval === 100 ? 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-white/5 border-white/10 text-white/20'}`}
+             className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all active:scale-95 ${scanInterval === 100 ? 'bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)] text-black border-purple-400' : 'bg-white/8 border-white/10 text-white/20'}`}
            >
              <Activity className="w-5 h-5" />
            </button>
-           <p className="text-[6px] font-black text-white/10 uppercase leading-none mt-1 tracking-tighter">Scan Cycle<br/>Velocity</p>
+           <p className="text-[8px] font-bold text-white/60 uppercase leading-tight mt-1 px-1">Scan Cycle<br/>Velocity</p>
         </div>
 
-        <div className="flex flex-col items-center gap-3 w-full px-2 text-center mt-auto">
+        <div className="flex flex-col items-center gap-3 w-full px-2 text-center mt-auto group">
           <button 
              onClick={() => setIsTerminalExpanded(!isTerminalExpanded)}
              data-tooltip={isTerminalExpanded ? "Hide Telemetry" : "Show Telemetry"}
              data-tooltip-dir="right"
-             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isTerminalExpanded ? 'bg-white/10 text-white' : 'bg-white/5 text-white/10'}`}
+             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${isTerminalExpanded ? 'bg-white/30 text-white border border-white/40 shadow-xl' : 'bg-white/8 text-white/20 border border-white/10'}`}
           >
              <Globe className="w-5 h-5" />
           </button>
-          <p className="text-[6px] font-black text-white/10 uppercase tracking-tighter">Terminal<br/>Link</p>
+          <p className="text-[8px] font-bold text-white/60 uppercase px-1">Terminal<br/>Link</p>
         </div>
       </aside>
 
       {/* ── RIGHT SIDEBAR: TELEMETRY ── */}
-      <aside className="fixed right-0 top-[60px] bottom-0 w-[120px] border-l border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30 overflow-y-auto hide-scrollbar">
+      <aside className="fixed right-0 top-[60px] bottom-0 w-[120px] border-l border-white/[0.05] bg-black/40 flex flex-col items-center py-8 gap-10 z-[100]">
         <div className="flex flex-col items-center gap-1.5 w-full text-center">
           <MetricSide label="Engine" value={isRunning ? "14%" : "0%"} icon={<Cpu className="w-4 h-4 text-cyan-400" />} tooltip="Current CPU Load" dir="left" />
-          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">System<br/>Compute</p>
+          <p className="text-[8px] font-bold text-white/60 uppercase mt-1">System<br/>Compute</p>
         </div>
         <div className="flex flex-col items-center gap-1.5 w-full text-center">
           <MetricSide label="Latency" value={isRunning ? "38ms" : "--"} icon={<Globe className="w-4 h-4 text-purple-400" />} tooltip="Network Roundtrip" dir="left" />
-          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">Response<br/>Delay</p>
+          <p className="text-[8px] font-bold text-white/60 uppercase mt-1">Response<br/>Delay</p>
         </div>
         <div className="flex flex-col items-center gap-1.5 w-full text-center">
           <MetricSide label="Detected" value={adsClosed > 0 ? adsClosed.toString() : "NONE"} icon={<Zap className="w-4 h-4 text-emerald-400" />} tooltip="Ad Elements Caught" dir="left" />
-          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">Bypass<br/>Counter</p>
+          <p className="text-[8px] font-bold text-white/60 uppercase mt-1">Bypass<br/>Counter</p>
         </div>
         <div className="flex flex-col items-center gap-1.5 w-full text-center">
           <MetricSide label="Health" value="ULTRA" icon={<Activity className="w-4 h-4 text-white/20" />} tooltip="System Integrity" dir="left" />
-          <p className="text-[6px] font-black text-white/10 uppercase leading-none tracking-tighter">Core<br/>Stability</p>
+          <p className="text-[8px] font-bold text-white/60 uppercase mt-1">Core<br/>Stability</p>
         </div>
       </aside>
 
@@ -316,57 +317,11 @@ export default function Dashboard() {
 
 function MetricSide({ label, value, icon, tooltip, dir }: { label: string; value: string; icon: any; tooltip: string; dir?: "left" | "right" }) {
   return (
-    <div className="flex flex-col items-center gap-2 group" data-tooltip={tooltip} data-tooltip-dir={dir}>
-       <div className="text-white/10 group-hover:text-cyan-500/40 transition-colors transform group-hover:scale-110 duration-500">{icon}</div>
-       <span className="text-[6px] font-black text-white/20 uppercase tracking-[0.2em]">{label}</span>
-       <span className="text-[10px] font-black text-white/50 group-hover:text-white transition-colors tracking-tighter">{value}</span>
+    <div className="flex flex-col items-center gap-2 group cursor-help" data-tooltip={tooltip} data-tooltip-dir={dir}>
+       <div className="text-white/20 group-hover:text-cyan-400 transition-colors transform group-hover:scale-110 duration-500">{icon}</div>
+       <span className="text-[7px] font-black text-white/40 uppercase tracking-[0.2em]">{label}</span>
+       <span className="text-[12px] font-black text-white/80 group-hover:text-white transition-colors tracking-tighter">{value}</span>
     </div>
   );
 }
 
-const TerminalView = memo(function TerminalView({ logs, isRunning }: { logs: string[]; isRunning: boolean }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [logs]);
-
-  const clearLogs = async () => {
-    try {
-      await fetch(`${API}/clear_logs`, { method: "POST" });
-    } catch (err) {
-      console.error("Failed to clear logs:", err);
-    }
-  };
-
-  return (
-    <div className="h-full bg-black/80 rounded-[2rem] border border-white/[0.05] flex flex-col overflow-hidden relative shadow-2xl animate-in fade-in duration-500">
-       <div className="p-6 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
-          <div className="flex items-center gap-3">
-             <span className="text-[9px] font-black uppercase text-white/30 tracking-[0.3em]">System_Telemetry</span>
-             {isRunning && <div className="w-1 h-1 rounded-full bg-cyan-500 animate-ping shadow-[0_0_10px_#06b6d4]" />}
-          </div>
-          <button 
-             onClick={clearLogs}
-             className="p-2 hover:bg-white/5 rounded-lg transition-colors group"
-             title="Clear Logs"
-          >
-             <Eraser className="w-3 h-3 text-white/20 group-hover:text-red-400" />
-          </button>
-       </div>
-       <div ref={scrollRef} className="flex-1 p-8 font-mono text-[9px] overflow-y-auto terminal-scrollbar space-y-3">
-          {logs.length === 0 ? (
-             <div className="h-full flex flex-col items-center justify-center opacity-5 space-y-4">
-                <Activity className="w-12 h-12" />
-                <p className="uppercase tracking-[0.3em] text-[7px]">Awaiting Uplink...</p>
-             </div>
-          ) : logs.map((log, i) => (
-            <div key={i} className="flex gap-4 text-white/30 hover:text-cyan-400 group transition-all">
-              <span className="opacity-10 shrink-0 text-[7px] group-hover:opacity-40">[{i+1}]</span>
-              <span className="break-all">{log}</span>
-            </div>
-          ))}
-          {isRunning && <div className="ml-5 w-1 h-2.5 bg-cyan-500 animate-pulse mt-3" />}
-       </div>
-    </div>
-  );
-});

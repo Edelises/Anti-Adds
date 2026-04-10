@@ -48,26 +48,26 @@ html, body {
 [data-tooltip]::before {
   content: attr(data-tooltip);
   position: absolute;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.95);
-  color: #06b6d4;
-  font-size: 8px;
-  font-weight: 900;
+  padding: 8px 12px;
+  background: rgba(10, 10, 12, 0.98);
+  color: #22d3ee; /* Cyan 400 */
+  font-size: 10px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   white-space: nowrap;
-  border-radius: 6px;
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.4);
   opacity: 0;
   pointer-events: none;
-  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
-  z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+  z-index: 9999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9);
 }
 
 /* Default (Top-Center) */
 [data-tooltip]:not([data-tooltip-dir])::before {
-  bottom: 125%;
+  bottom: 130%;
   left: 50%;
   transform: translateX(-50%) translateY(10px);
 }
@@ -78,9 +78,9 @@ html, body {
 
 /* Right-Facing (For Left Sidebar) */
 [data-tooltip-dir="right"]::before {
-  left: 140%;
+  left: 110%;
   top: 50%;
-  transform: translateY(-50%) translateX(-10px);
+  transform: translateY(-50%) translateX(-15px);
 }
 [data-tooltip-dir="right"]:hover::before {
   opacity: 1;
@@ -89,9 +89,9 @@ html, body {
 
 /* Left-Facing (For Right Sidebar) */
 [data-tooltip-dir="left"]::before {
-  right: 140%;
+  right: 110%;
   top: 50%;
-  transform: translateY(-50%) translateX(10px);
+  transform: translateY(-50%) translateX(15px);
 }
 [data-tooltip-dir="left"]:hover::before {
   opacity: 1;
