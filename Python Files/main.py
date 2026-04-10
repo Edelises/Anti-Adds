@@ -67,15 +67,46 @@ def get_resource_path(relative_path):
 import Quartz
 
 
-# ─── Temp file paths for captures ────────────────────────────────────────────
-_FULL_CAP   = os.path.join(tempfile.gettempdir(), "antiadds_full.png")
-_IPHONE_CAP = os.path.join(tempfile.gettempdir(), "antiadds_iphone.png")
+# ─── Helper: Capture via Quartz (Native macOS API) ─────────────────────────────
+def capture_retina_quartz(window_id=None):
+    """
+    Directly captures the screen or a window using Quartz CGWindowListCreateImage.
+    Bypasses screencapture CLI to avoid repeated permission prompts and overhead.
+    """
+    try:
+        import Quartz
+        from PIL import Image
+        if window_id:
+            image = Quartz.CGWindowListCreateImage(
+                Quartz.CGRectNull,
+                Quartz.kCGWindowListOptionIncludingWindow,
+                window_id,
+                Quartz.kCGWindowImageDefault
+            )
+        else:
+            image = Quartz.CGWindowListCreateImage(
+                Quartz.CGRectInfinite,
+                Quartz.kCGWindowListOptionOnScreenOnly,
+                Quartz.kCGNullWindowID,
+                Quartz.kCGWindowImageDefault
+            )
+            
+        if not image: return None
 
+        width = Quartz.CGImageGetWidth(image)
+        height = Quartz.CGImageGetHeight(image)
+        bytes_per_row = Quartz.CGImageGetBytesPerRow(image)
+        pixel_data = Quartz.CGDataProviderCopyData(Quartz.CGImageGetDataProvider(image))
+        if not pixel_data: return None
+        
+        img = Image.frombytes("RGBA", (width, height), pixel_data, "raw", "BGRA", bytes_per_row, 1)
+        return img.convert("RGB")
+    except Exception as e:
+        logging.error(f"Quartz capture error: {e}")
+        return None
 
-# ─── Helper: Find the iPhone Mirroring CGWindowID ─────────────────────────────
 def get_iphone_window_id():
-    """Use Quartz CGWindowList to find the iPhone Mirroring window.
-    Returns the CGWindowID (int) or None if the window isn't open."""
+    """Use Quartz CGWindowList to find the iPhone Mirroring window."""
     try:
         windows = Quartz.CGWindowListCopyWindowInfo(
             Quartz.kCGWindowListOptionOnScreenOnly | Quartz.kCGWindowListExcludeDesktopElements,
@@ -83,45 +114,22 @@ def get_iphone_window_id():
         )
         for w in windows:
             owner = w.get("kCGWindowOwnerName", "")
-            # Match the iPhone Mirroring app by owner name
             if "iPhone Mirroring" in owner:
                 return int(w["kCGWindowNumber"])
-    except Exception:
-        pass
+    except Exception: pass
     return None
 
-
-# ─── Helper: Capture a specific window by its CGWindowID ──────────────────────
-def capture_window(window_id, output_path):
-    """Use macOS screencapture to grab a single window at full Retina quality.
-    -x = silent, -l = specific window ID, -o = no shadow."""
+def has_accessibility_permission():
+    """Check if we have permission to control the mouse/keyboard."""
     try:
-        subprocess.run(
-            ["screencapture", "-x", "-o", "-l", str(window_id), output_path],
-            timeout=3, check=True,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        img = Image.open(output_path)
-        img.load()  # Force full read into memory
-        return img
-    except Exception:
-        return None
+        from ApplicationServices import AXIsProcessTrusted
+        return AXIsProcessTrusted()
+    except:
+        return True # Fallback
 
-
-# ─── Helper: Capture the full screen ─────────────────────────────────────────
-def capture_full_screen():
-    """Full-screen Retina capture using macOS screencapture."""
-    try:
-        subprocess.run(
-            ["screencapture", "-x", "-C", "-t", "png", _FULL_CAP],
-            timeout=3, check=True,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        img = Image.open(_FULL_CAP)
-        img.load()
-        return img
-    except Exception:
-        return None
+def open_privacy_settings(panel="Privacy_ScreenCapture"):
+    """Trigger macOS to open specific privacy panel."""
+    subprocess.run(["open", f"x-apple.systempreferences:com.apple.preference.security?{panel}"])
 
 
 # ─── FastAPI Setup ────────────────────────────────────────────────────────────
@@ -133,11 +141,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ─── Helper: Check Screen Recording Permissions ──────────────────────────────
+def has_screen_recording_permission():
+    """Checks if the application has screen recording permissions.
+    On macOS 10.15+, this is required for capturing other windows."""
+    try:
+        # CGPreflightScreenCaptureAccess returns True if we have permission
+        return Quartz.CGPreflightScreenCaptureAccess()
+    except AttributeError:
+        # Fallback for older macOS or if Quartz is limited
+        return True
+
 # ─── Global State ────────────────────────────────────────────────────────────
 state = {
     "is_running": True,  # Enable by default so it's ready on launch
     "mode": "macbook",   # default mode
-         # "macbook" or "iphone"
+    "has_permission": True, # Assume true, will check in loop
+    "permission_warning_sent": False,
     "last_detection": "System Initialized",
     "last_screenshot": None,        # PIL Image — full screen
     "last_iphone_screenshot": None, # PIL Image — iPhone window only
@@ -147,6 +167,8 @@ state = {
     "config": {
         "threshold": 0.75,          # Template matching confidence (0.0-1.0)
         "jitter": 5,                # Click offset randomness in pixels
+        "auto_click": True,         # Whether to actually click
+        "scan_interval": 100        # Interval in ms between scans
     },
 }
 
@@ -224,24 +246,45 @@ def set_mode(data: dict):
 
 @app.post("/config")
 def update_config(data: dict):
-    """Update engine configuration (threshold, jitter) from the dashboard."""
+    """Update engine configuration (threshold, jitter, etc) from the dashboard."""
     if "threshold" in data:
-        # Clamp to valid range 0.1 - 1.0
         val = max(0.1, min(1.0, float(data["threshold"])))
         state["config"]["threshold"] = val
         add_log(f"⚙️ Threshold set to {val:.0%}")
     if "jitter" in data:
-        # Clamp to 0-50 px
         val = max(0, min(50, int(data["jitter"])))
         state["config"]["jitter"] = val
         add_log(f"⚙️ Jitter set to {val}px")
+    if "auto_click" in data:
+        state["config"]["auto_click"] = bool(data["auto_click"])
+        add_log(f"⚙️ Auto-Click: {'ENABLED' if state['config']['auto_click'] else 'DISABLED'}")
+    if "scan_interval" in data:
+        val = max(10, int(data["scan_interval"]))
+        state["config"]["scan_interval"] = val
+        add_log(f"⚙️ Scan speed set to {val}ms")
     return {"status": "success", "config": state["config"]}
+
+
+@app.post("/clear_logs")
+def clear_logs():
+    """Reset the rolling log buffer."""
+    state["logs"].clear()
+    add_log("🧹 Logs cleared by user")
+    return {"status": "success"}
 
 
 @app.get("/config")
 def get_config():
     """Return current engine configuration."""
     return state["config"]
+
+
+@app.post("/open_settings")
+def open_settings(data: dict):
+    """Open a specific macOS privacy panel."""
+    panel = data.get("panel", "Privacy_ScreenCapture")
+    open_privacy_settings(panel)
+    return {"status": "success"}
 
 
 # ─── Automation Loop (background thread) ─────────────────────────────────────
@@ -265,7 +308,33 @@ def automation_loop():
     text_targets = ["watch", "more ads", "skip", "close", "sponsored", "ad"]
 
     while True:
-        # Idle when paused
+        # 1. Check Permissions (macOS)
+        p_screen = has_screen_recording_permission()
+        p_access = has_accessibility_permission()
+        
+        state["has_permission"] = p_screen and p_access
+        
+        if not p_screen:
+            if not state.get("permission_warning_sent"):
+                add_log("🔐 Screen Recording permission required for detection.")
+                state["permission_warning_sent"] = True
+            time.sleep(2)
+            continue
+        
+        if not p_access:
+            if not state.get("access_warning_sent"):
+                add_log("🖱️ Accessibility permission required to click ads.")
+                state["access_warning_sent"] = True
+            time.sleep(2)
+            continue
+
+        # If we got here, we have permissions
+        if state.get("permission_warning_sent") or state.get("access_warning_sent"):
+            add_log("✅ All permissions granted! Resuming...")
+            state["permission_warning_sent"] = False
+            state["access_warning_sent"] = False
+
+        # 2. Idle when paused
         if not state["is_running"]:
             time.sleep(1)
             continue
@@ -273,57 +342,43 @@ def automation_loop():
         # Hot-reload config into detector each loop
         detector.threshold = state["config"]["threshold"]
         jitter = state["config"]["jitter"]
+        auto_click = state["config"]["auto_click"]
+        scan_interval = state["config"]["scan_interval"]
+
+        # User objective: ONLY click (X), "Skip", "Close", or "View More" (to reveal X).
+        # We increase specificity to avoid "clicking in random places".
+        text_targets = ["skip ad", "skip", "close", "view more", "click to view", "sponsored x"]
+        banned_patterns = ["play now", "install", "open", "okay", "cancel"]
 
         try:
-            # ── 1. Always grab the full screen (for MacBook panel + detection) ──
-            full_screenshot = capture_full_screen()
-            if full_screenshot is None or full_screenshot.width < 100:
+            # ── 1. Always grab the full screen ──
+            full_screenshot = capture_retina_quartz()
+            if full_screenshot is None:
                 add_log("⚠️ Screen capture failed")
                 time.sleep(2)
                 continue
             state["last_screenshot"] = full_screenshot
 
-            # ── 2. iPhone mode: capture the Mirroring window directly ───────────
+            # ── 2. ROI Selection ──
             if state["mode"] == "iphone":
-                # Find the window ID if we don't have it yet
                 if state["iphone_window_id"] is None:
                     wid = get_iphone_window_id()
                     if wid:
                         state["iphone_window_id"] = wid
-                        add_log(f"📱 iPhone window found (ID: {wid})")
+                        add_log(f"📱 iPhone Link Active (ID: {wid})")
                     else:
-                        add_log("❌ iPhone Mirroring not open")
-                        state["last_iphone_screenshot"] = None
                         time.sleep(1)
                         continue
 
-                # Capture the window directly — full Retina, no crop
-                iphone_img = capture_window(state["iphone_window_id"], _IPHONE_CAP)
-                if iphone_img:
-                    state["last_iphone_screenshot"] = iphone_img
-                else:
-                    # Window may have closed — reset and retry
-                    state["iphone_window_id"] = None
-                    add_log("⚠️ iPhone capture failed, re-scanning...")
-                    time.sleep(1)
-                    continue
-
-                # For ad detection, get the iPhone window's logical bounds as ROI
+                # Refresh iPhone Window ROI
                 try:
-                    windows = Quartz.CGWindowListCopyWindowInfo(
-                        Quartz.kCGWindowListOptionOnScreenOnly,
-                        Quartz.kCGNullWindowID
-                    )
+                    windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
                     for w in windows:
                         if int(w.get("kCGWindowNumber", 0)) == state["iphone_window_id"]:
                             b = w["kCGWindowBounds"]
-                            state["mirror_roi"] = (
-                                int(b["X"]), int(b["Y"]),
-                                int(b["Width"]), int(b["Height"])
-                            )
+                            state["mirror_roi"] = (int(b["X"]), int(b["Y"]), int(b["Width"]), int(b["Height"]))
                             break
-                except Exception:
-                    pass
+                except: pass
 
                 active_roi = state["mirror_roi"]
                 full_window_roi = state["mirror_roi"]
@@ -331,30 +386,34 @@ def automation_loop():
                 active_roi = top_right_roi
                 full_window_roi = (0, 0, screen_w, screen_h)
 
-            # ── 3. Detect ad UI elements in the active region ───────────────────
+            # ── 3. High-Precision Detection ──
             found = None
             label = ""
 
-            found = detector.detect_text(full_screenshot, text_targets, roi=active_roi)
-            if found:
-                label = "Text target"
-
-            if not found:
-                # Top left play symbols exist! Search full window for skip masks.
-                found = detector.find_best_match(full_screenshot, "skip", roi=full_window_roi)
-                if found:
-                    label = "Skip icon"
-
+            # Prioritize Template Matching (Icons) as they are most reliable for (X)
             if not found:
                 found = detector.find_best_match(full_screenshot, "close_x", roi=full_window_roi)
-                if found:
-                    label = "Close icon"
+                if found: label = "(X) Button"
 
-            # ── 4. Click if found ───────────────────────────────────────────────
+            if not found:
+                found = detector.find_best_match(full_screenshot, "skip", roi=full_window_roi)
+                if found: label = "Skip Icon"
+
+            # Fallback to OCR for text-based "Close" or "View More"
+            if not found:
+                found = detector.detect_text(full_screenshot, text_targets, roi=active_roi, banned_texts=banned_patterns)
+                if found: label = "Text Bypass"
+
+            # ── 4. Verified Action ──
             if found:
-                add_log(f"✅ Clicking {label} at ({found[0]}, {found[1]})")
-                clicker.click_at(*found, jitter=jitter)
-                time.sleep(3)
+                if auto_click:
+                    add_log(f"🎯 Targeted: {label} at {found}")
+                    clicker.click_at(*found, jitter=jitter)
+                    # Long sleep after click to allow UI to settle/animation to finish
+                    time.sleep(2.5)
+                else:
+                    add_log(f"🔍 Monitoring: {label} visible")
+                    time.sleep(1)
                 continue
 
             state["last_detection"] = f"Scanning {state['mode']}..."
@@ -363,7 +422,7 @@ def automation_loop():
             add_log(f"🚨 Error: {e}")
             time.sleep(1)
 
-        time.sleep(0.5)
+        time.sleep(scan_interval / 1000.0)
 
 
 

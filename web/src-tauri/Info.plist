@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Anti-Ads requires screen recording to detect Ad overlays in your browser and iPhone Mirroring.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Anti-Ads requires ability to interact with the screen to bypass ads.</string>
+</dict>
+</plist>

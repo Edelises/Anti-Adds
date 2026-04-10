@@ -1,31 +1,27 @@
-# Anti-Adds Automation Plan - COMPLETED
+# Anti-Ads Fixes & Improvements
 
-## 🛠 Setup & Structure
-- [x] Initialize directory structure (Python Files, templates, Documents) <!-- id: 0 -->
-- [x] Install dependencies: `opencv-python`, `pyautogui`, `numpy`, `pillow`, `pytesseract` <!-- id: 1 -->
+## Progress Tracker
+- [x] Fix dashboard terminal scrolling and fixed size <!-- id: 0 -->
+- [x] Investigate and fix screen recording permission notification loop <!-- id: 1 -->
+- [x] Implement Swapping Side-Load Dashboard Redesign <!-- id: 2 -->
+- [x] High-Precision Auto-Click Logic (X-only) <!-- id: 3 -->
 
-## 🖥️ UI Version (Next.js Dashboard)
-- [x] Initialize Next.js project in `web/` directory <!-- id: 12 -->
-- [x] Implement Dashboard UI (Live Feed, Logs, Settings) <!-- id: 13 -->
-- [x] Create API/WebSocket bridge between Python backend and Next.js <!-- id: 14 -->
+## Implementation Plan
 
-## 👁 Detection System (`detector.py`)
-- [x] Implementation of Multi-scale Template Matching <!-- id: 2 -->
-- [x] ROI (Region of Interest) optimization (Smart fallback to full screen) <!-- id: 3 -->
-- [x] OCR Integration for "Skip" and "Close" text detection <!-- id: 4 -->
-- [x] Integration of new template images from provided screenshots <!-- id: 15 -->
+### 1. Dashboard Redesign (Tri-Column)
+- **Problem**: Header and Footer were consuming too much space; iPhone feed was not pixel-perfect.
+- **Solution**:
+    - **Tri-Column Layout**: Left Sidebar (Configs), Center (Feeds/Terminal), Right Sidebar (Metrics).
+    - **Swapping Logic**: Preserved dynamic swapping of Terminal and Monitoring panel based on mode.
+    - **iPhone Precision**: Implemented physical aspect ratio (9:19.5) mirroring with zero-margin scaling to match the native Mirroring app.
 
-## 🖱 Interaction System (`clicker.py`)
-- [x] PyAutoGUI click logic with randomized offsets <!-- id: 5 -->
-- [x] Real-time control (Start/Stop from UI) <!-- id: 16 -->
+### 2. High-Precision Auto-Click
+- **Problem**: Engine was "clicking in random places".
+- **Solution**:
+    - **Strict Targeting**: Refined keywords to specifically trigger on "(X)", "Skip", "Close", and "View More".
+    - **Blacklist**: Added an explicit banned keyword list ("Play", "Install", "Okay") to prevent accidental marketing clicks.
+    - **Template Priority**: Forced the engine to check Icon Templates (Pixel-perfect matches) before falling back to OCR text analysis.
+    - **Threshold Buffer**: Increased default detection threshold to ensure only high-confidence matches are acted upon.
 
-## 🔄 Core Logic (`main.py`)
-- [x] Implementation of the main loop with state machine <!-- id: 7 -->
-- [x] HTTP/WebSocket Server for UI integration <!-- id: 17 -->
-
-## 🖼 Template Extraction
-- [x] Extract "X", "Play", "Skip" templates from provided screenshots (Automated) <!-- id: 9 -->
-
-## 🧪 Testing & Refinement
-- [x] Document bugs in `Issues/Bugs` <!-- id: 10 -->
-- [x] Document fixes in `Solutions Issues/Bugs` <!-- id: 11 -->
+### 3. Screen Recording & Permission Fix
+- **Solution**: Native Quartz integration avoids the `screencapture` process loop, ensuring macOS permissions are handled within the single app context.
