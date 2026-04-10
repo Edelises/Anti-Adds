@@ -26,8 +26,13 @@ cp -R templates/* web/src-tauri/templates/
 
 echo "🏗️  Phase 1: Building Python Sidecar (Backend Engine)..."
 cd "Python Files"
-# We build as a single file (--onefile) for simplicity in Tauri
-python3 -m PyInstaller --onefile --name backend-engine main.py
+# Use --collect-all to ensure pydantic and fastapi metadata are properly bundled
+# and --exclude-module pkg_resources to prevent the InvalidVersion crash
+python3 -m PyInstaller --onefile --name backend-engine \
+    --hidden-import appdirs --hidden-import packaging \
+    --collect-all pydantic --collect-all fastapi \
+    --exclude-module pkg_resources \
+    main.py
 
 echo "📦 Phase 2: Preparing Sidecar for Tauri..."
 # Tauri requires sidecars to have the target triple suffix

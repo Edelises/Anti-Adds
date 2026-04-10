@@ -13,14 +13,37 @@ import subprocess
 import tempfile
 import os
 import io
+import logging
 from collections import deque
+
+# Setup persistent debug logging
+LOG_FILE = os.path.join(tempfile.gettempdir(), "antiadds_backend.log")
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    force=True
+)
+logging.info("--- BACKEND ENGINE BOOTING ---")
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import sys
+import traceback
 from PIL import Image
 from detector import Detector
 from clicker import Clicker
+
+try:
+    logging.info("Importing heavy dependencies...")
+    import cv2
+    import numpy as np
+    import Quartz
+    logging.info("Dependencies loaded successfully.")
+except Exception as e:
+    logging.error(f"FATAL: Dependency load failed: {str(e)}")
+    logging.error(traceback.format_exc())
+    sys.exit(1)
 
 # ─── Path Resolution: Finds files whether running in Dev or Bundled ──────────
 def get_resource_path(relative_path):
