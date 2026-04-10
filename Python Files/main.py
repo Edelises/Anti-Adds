@@ -133,10 +133,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global shared state
+# ─── Global State ────────────────────────────────────────────────────────────
 state = {
-    "is_running": False,
-    "mode": "macbook",              # "macbook" or "iphone"
+    "is_running": True,  # Enable by default so it's ready on launch
+    "mode": "macbook",   # default mode
+         # "macbook" or "iphone"
     "last_detection": "System Initialized",
     "last_screenshot": None,        # PIL Image — full screen
     "last_iphone_screenshot": None, # PIL Image — iPhone window only
@@ -363,6 +364,8 @@ def automation_loop():
             time.sleep(1)
 
         time.sleep(0.5)
+
+
 
 
 # ─── Entry Point ──────────────────────────────────────────────────────────────

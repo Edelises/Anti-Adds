@@ -43,8 +43,9 @@ export default function Dashboard() {
     } catch (err) {
       setIsConnected(false);
     } finally {
-      // Schedule next poll ONLY after this one is done
-      pollTimerRef.current = setTimeout(pollStatus, 800);
+      // Schedule next poll ONLY after this one is done. 
+      // Faster polling (500ms) makes the 'Initial' launch feel instant.
+      pollTimerRef.current = setTimeout(pollStatus, 500);
     }
   };
 
