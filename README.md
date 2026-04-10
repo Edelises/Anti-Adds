@@ -37,31 +37,27 @@ pip3 install pyautogui opencv-python pytesseract fastapi uvicorn pillow pyinstal
 
 Whenever you download the repo from GitHub to a new Mac, follow this exact sequence:
 
-**1. Rebuild the Python Backend Engine:**
-Navigate inside the root of the project and execute the bundler script.
+1. **Make sure Python 3 is installed.**
+2. **Rebuild the Python Backend Engine:** Navigate inside the root of the project and execute:
 ```bash
 bash scratch/bundle_backend.sh
 ```
 *What this does:* PyInstaller analyzes the application, wraps the CV code into a standalone Apple Darwin architecture executable, and injects it right into the Tauri container path: (`web/src-tauri/backend-engine-aarch64-apple-darwin`).
 
-**2. Install Frontend Node Components:**
+3. **Install Frontend Node Components:**
 ```bash
 cd web
 npm install
 ```
 
-**3. Launch the App!**
+4. **Launch the APP:**
 ```bash
-# Launch live testing environment
 npm run tauri dev
-
-# Or build the final standalone .dmg desktop App
-npm run tauri build
 ```
 
 ---
 
 ## 📂 Architecture Note
-**Do not touch `backend-engine*`:** When cloning, Git explicitly ignores `web/src-tauri/backend-engine*`. That binary is too massive strictly for Github. Step 1 of the build sequence recreates this binary native to your exact CPU (M1/M2/Intel). 
+**Do not touch `backend-engine*`:** When cloning, Git explicitly ignores `web/src-tauri/backend-engine*`. That binary is too massive strictly for Github. Because the compiled Python backend (the actual `backend-engine-aarch64-apple-darwin` executable) is explicitly ignored by `.gitignore` (which is standard practice for heavy binary files), downloading the repository means you are downloading the source code, not the compiled engine. Out of the box, it will NOT work unless you run the Build Sequence above!
 
 **Tesseract OCR Restrictions:** `pytesseract` does not bundle the Tesseract engine directly, meaning `brew install tesseract` is an absolute requirement on any new Macbook; otherwise, the engine won't crash, but it will silently fail to click textual words like "watch" or "skip".

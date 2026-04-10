@@ -279,8 +279,10 @@ def automation_loop():
                     pass
 
                 active_roi = state["mirror_roi"]
+                full_window_roi = state["mirror_roi"]
             else:
                 active_roi = top_right_roi
+                full_window_roi = (0, 0, screen_w, screen_h)
 
             # ── 3. Detect ad UI elements in the active region ───────────────────
             found = None
@@ -291,12 +293,13 @@ def automation_loop():
                 label = "Text target"
 
             if not found:
-                found = detector.find_best_match(full_screenshot, "skip", roi=active_roi)
+                # Top left play symbols exist! Search full window for skip masks.
+                found = detector.find_best_match(full_screenshot, "skip", roi=full_window_roi)
                 if found:
                     label = "Skip icon"
 
             if not found:
-                found = detector.find_best_match(full_screenshot, "close_x", roi=active_roi)
+                found = detector.find_best_match(full_screenshot, "close_x", roi=full_window_roi)
                 if found:
                     label = "Close icon"
 
