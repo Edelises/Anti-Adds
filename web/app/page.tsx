@@ -269,7 +269,7 @@ export default function Dashboard() {
                    </div>
                 </div>
               ) : (
-                isTerminalExpanded && <TerminalView logs={logs} isRunning={isRunning} />
+                isTerminalExpanded && <TerminalView logs={logs} isRunning={isRunning} setLogs={setLogs} />
               )}
             </div>
 
@@ -292,7 +292,7 @@ export default function Dashboard() {
                    </div>
                 </div>
               ) : (
-                isTerminalExpanded && <TerminalView logs={logs} isRunning={isRunning} />
+                isTerminalExpanded && <TerminalView logs={logs} isRunning={isRunning} setLogs={setLogs} />
               )}
             </div>
 

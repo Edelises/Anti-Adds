@@ -1,4 +1,4 @@
-export const TerminalView = memo(function TerminalView({ logs, isRunning }: { logs: string[]; isRunning: boolean }) {
+export const TerminalView = memo(function TerminalView({ logs, isRunning, setLogs }: { logs: string[]; isRunning: boolean; setLogs?: (logs: string[]) => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -6,6 +6,8 @@ export const TerminalView = memo(function TerminalView({ logs, isRunning }: { lo
 
   const clearLogs = async () => {
     try {
+      // Optmistically clear UI first for instant feedback
+      if (setLogs) setLogs([]); 
       await fetch(`${API}/clear_logs`, { method: "POST" });
     } catch (err) {
       console.error("Failed to clear logs:", err);
