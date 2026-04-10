@@ -163,6 +163,7 @@ export default function Dashboard() {
            <button 
              onClick={() => updateConfig('threshold', threshold + 5)} 
              data-tooltip="Increase AI Confidence"
+             data-tooltip-dir="right"
              className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col items-center justify-center hover:bg-cyan-500/10 transition-all text-cyan-400"
            >
               <span className="text-[11px] font-black">{threshold}</span>
@@ -171,6 +172,7 @@ export default function Dashboard() {
            <button 
              onClick={() => updateConfig('threshold', threshold - 5)} 
              data-tooltip="Reduce Threshold"
+             data-tooltip-dir="right"
              className="text-[8px] font-black text-white/10 hover:text-white/30 transition-colors"
            >
              − 0.05
@@ -182,6 +184,7 @@ export default function Dashboard() {
            <button 
              onClick={() => setAutoClick(!autoClick)} 
              data-tooltip={autoClick ? "Disable Auto-Bypass" : "Enable Auto-Bypass"}
+             data-tooltip-dir="right"
              className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${autoClick ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.4)] text-black border-cyan-400' : 'bg-white/5 border-white/10 text-white/20'}`}
            >
              <Zap className="w-5 h-5" />
@@ -193,6 +196,7 @@ export default function Dashboard() {
            <button 
              onClick={() => setScanInterval(scanInterval === 100 ? 500 : 100)} 
              data-tooltip={scanInterval === 100 ? "Set Engine to ECO Mode" : "Set Engine to FAST Mode"}
+             data-tooltip-dir="right"
              className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${scanInterval === 100 ? 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-white/5 border-white/10 text-white/20'}`}
            >
              <Activity className="w-5 h-5" />
@@ -202,6 +206,7 @@ export default function Dashboard() {
         <button 
            onClick={() => setIsTerminalExpanded(!isTerminalExpanded)}
            data-tooltip={isTerminalExpanded ? "Hide Telemetry" : "Show Telemetry"}
+           data-tooltip-dir="right"
            className={`mt-auto w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isTerminalExpanded ? 'bg-white/10 text-white' : 'bg-white/5 text-white/10'}`}
         >
            <Globe className="w-5 h-5" />
@@ -210,10 +215,10 @@ export default function Dashboard() {
 
       {/* ── RIGHT SIDEBAR: TELEMETRY ── */}
       <aside className="fixed right-0 top-[60px] bottom-0 w-[100px] border-l border-white/[0.05] bg-black/20 flex flex-col items-center py-8 gap-10 z-30">
-        <MetricSide label="Engine" value={isRunning ? "14%" : "0%"} icon={<Cpu className="w-4 h-4 text-cyan-400" />} tooltip="Current CPU Load" />
-        <MetricSide label="Latency" value={isRunning ? "38ms" : "--"} icon={<Globe className="w-4 h-4 text-purple-400" />} tooltip="Network Roundtrip" />
-        <MetricSide label="Detected" value="NONE" icon={<Zap className="w-4 h-4 text-emerald-400" />} tooltip="Ad Elements Caught" />
-        <MetricSide label="Health" value="ULTRA" icon={<Activity className="w-4 h-4 text-white/20" />} tooltip="System Integrity" />
+        <MetricSide label="Engine" value={isRunning ? "14%" : "0%"} icon={<Cpu className="w-4 h-4 text-cyan-400" />} tooltip="Current CPU Load" dir="left" />
+        <MetricSide label="Latency" value={isRunning ? "38ms" : "--"} icon={<Globe className="w-4 h-4 text-purple-400" />} tooltip="Network Roundtrip" dir="left" />
+        <MetricSide label="Detected" value="NONE" icon={<Zap className="w-4 h-4 text-emerald-400" />} tooltip="Ad Elements Caught" dir="left" />
+        <MetricSide label="Health" value="ULTRA" icon={<Activity className="w-4 h-4 text-white/20" />} tooltip="System Integrity" dir="left" />
       </aside>
 
       {/* ── MAIN WORKSPACE ── */}
@@ -289,9 +294,9 @@ export default function Dashboard() {
   );
 }
 
-function MetricSide({ label, value, icon, tooltip }: { label: string; value: string; icon: any; tooltip: string }) {
+function MetricSide({ label, value, icon, tooltip, dir }: { label: string; value: string; icon: any; tooltip: string; dir?: "left" | "right" }) {
   return (
-    <div className="flex flex-col items-center gap-2 group" data-tooltip={tooltip}>
+    <div className="flex flex-col items-center gap-2 group" data-tooltip={tooltip} data-tooltip-dir={dir}>
        <div className="text-white/10 group-hover:text-cyan-500/40 transition-colors transform group-hover:scale-110 duration-500">{icon}</div>
        <span className="text-[6px] font-black text-white/20 uppercase tracking-[0.2em]">{label}</span>
        <span className="text-[10px] font-black text-white/50 group-hover:text-white transition-colors tracking-tighter">{value}</span>
