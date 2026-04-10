@@ -1,3 +1,5 @@
+"use client";
+
 import { memo, useRef, useEffect } from "react";
 import { Activity, Eraser } from "lucide-react";
 
