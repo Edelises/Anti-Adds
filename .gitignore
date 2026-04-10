@@ -1,0 +1,6 @@
+node_modules/
+.next/
+*.log
+*.test.png
+test_cap.png
+iphone_test.png
