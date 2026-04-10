@@ -1,12 +1,31 @@
-node_modules/
-.next/
-*.log
-*.test.png
-test_cap.png
-iphone_test.png
-.DS_Store
-scratch/
-build/
-*.app/
-*.exe
+# Anti-Adds Exclusions
+.claude
+.agent
+SQL Scripts/
+Issues/
+Solutions Issues/
+Documents/
+
+# Python Build Artifacts
+Python Files/build/
+Python Files/dist/
+Python Files/*.spec
+__pycache__/
+*.pyc
+
+# Tauri Build Artifacts
+web/src-tauri/target/
+web/src-tauri/bin/
+web/src-tauri/templates/
+web/out/
+web/.next/
+
+# Final Binaries
+*.app
 *.dmg
+*.zip
+*.log
+
+# OS Metadata
+.DS_Store
+web/node_modules/

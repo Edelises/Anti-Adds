@@ -17,9 +17,28 @@ from collections import deque
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import sys
 from PIL import Image
 from detector import Detector
 from clicker import Clicker
+
+# ─── Path Resolution: Finds files whether running in Dev or Bundled ──────────
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    if getattr(sys, 'frozen', False):
+        # We are running as a binary (sidecar)
+        base_path = os.path.dirname(sys.executable)
+        # Check if we are inside a macOS app bundle
+        if ".app/Contents/MacOS" in base_path:
+            # Go up to Contents, then down to Resources
+            res_path = os.path.normpath(os.path.join(os.path.dirname(base_path), "Resources", relative_path))
+            if os.path.exists(res_path):
+                return res_path
+        return os.path.join(base_path, relative_path)
+    
+    # Dev mode: look relative to project root
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(root, relative_path)
 
 # Quartz is a macOS-native framework — no pip install needed
 import Quartz
@@ -204,7 +223,11 @@ def get_config():
 # ─── Automation Loop (background thread) ─────────────────────────────────────
 def automation_loop():
     add_log("🚀 Engine thread started")
-    detector = Detector(threshold=state["config"]["threshold"])
+    
+    # Use the shared resource path for templates
+    temp_dir = get_resource_path("templates")
+    detector = Detector(templates_dir=temp_dir, threshold=state["config"]["threshold"])
+    
     clicker = Clicker()
     detector.load_templates()
     add_log(f"📦 {len(detector.templates)} templates loaded")

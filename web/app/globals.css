@@ -8,9 +8,16 @@
   --background-end-rgb: 0, 0, 0;
 }
 
-body {
+/* overflow: clip does NOT create a scroll container — WKWebView cannot scroll it at all */
+html, body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  background: #000;
+  overflow: clip !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
 }
 
 @layer utilities {

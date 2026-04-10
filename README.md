@@ -1,4 +1,4 @@
-# Anti-Adds Detector (Premium Desktop Edition)
+# Anti-Ads Detector (Premium Desktop Edition)
 
 A high-performance standalone macOS native Desktop Engine designed natively to detect and silently automate advertisement skipping across interfaces using 4K computer vision and Machine Learning. 
 
