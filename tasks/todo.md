@@ -19,6 +19,7 @@ All project objectives have been successfully implemented, tested, and documente
 
 ### 3. Documentation & Terminal
 - [x] **Log Management**: Integrated Terminal Eraser tool for session clearing.
+- [x] **Power Management**: Integrated 'Hot Restart' and 'Permanent Shutdown' for complete lifecycle control.
 - [x] **Onboarding**: Comprehensive root README.md with reactivation and build guides.
 - [x] **Git Cleanliness**: Full repository sync with strict file exclusion rules.
 
