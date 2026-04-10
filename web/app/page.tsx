@@ -197,14 +197,14 @@ const TerminalLog = memo(function TerminalLog({ logs, isRunning }: { logs: strin
   }, [logs]);
 
   return (
-    <div className="flex-1 min-h-0 bg-black/40 rounded-[2rem] border border-white/[0.05] flex flex-col overflow-hidden relative shadow-inner">
-       <div className="px-5 py-3 border-b border-white/[0.05] bg-black/20 flex-shrink-0 flex justify-between items-center">
+    <div className="h-[440px] bg-black/40 rounded-[2rem] border border-white/[0.05] flex flex-col overflow-hidden relative shadow-inner">
+       <div className="px-5 py-3 border-b border-white/[0.05] bg-black/20 flex-shrink-0 flex justify-between items-center z-10">
           <span className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">Live Telemetry</span>
           {isRunning && <div className="w-1 h-1 rounded-full bg-cyan-500 animate-ping" />}
        </div>
        <div
          ref={scrollRef}
-         className="absolute inset-0 top-10 p-5 font-mono text-[9px] overflow-y-auto overflow-x-hidden space-y-2 scroll-smooth"
+         className="flex-1 p-5 font-mono text-[9px] overflow-y-auto overflow-x-hidden space-y-2 scroll-smooth terminal-scrollbar"
          style={{ overscrollBehavior: 'none' }}
        >
           {logs.map((log, i) => (
@@ -213,7 +213,7 @@ const TerminalLog = memo(function TerminalLog({ logs, isRunning }: { logs: strin
               <span className="break-all">{log}</span>
             </div>
           ))}
-          {isRunning && <div className="ml-4 w-1 h-3 bg-cyan-500 animate-pulse" />}
+          {isRunning && <div className="ml-4 w-1 h-3 bg-cyan-500 animate-pulse mt-2" />}
        </div>
     </div>
   );
