@@ -188,11 +188,11 @@ export default function Dashboard() {
               data-tooltip={isRunning ? "Terminate Engine" : "Ignite Engine"}
               className={`h-9 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
                 !isConnected ? "opacity-20 cursor-not-allowed" : 
-                isRunning ? "bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] text-black" : 
-                "hover:bg-white/10 text-white/40"
+                isRunning ? "bg-red-500/10 border border-red-500/20 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : 
+                "bg-white text-black hover:scale-105"
               }`}
             >
-              {isRunning ? "ACTIVE" : "STANDBY"}
+              {isRunning ? "STOP DETECTOR" : "RUN DETECTOR"}
             </button>
 
             <button
@@ -211,6 +211,7 @@ export default function Dashboard() {
               <Power className="w-4 h-4" />
             </button>
           </div>
+        </div>
         </div>
       </header>
 
