@@ -1,3 +1,8 @@
+import { memo, useRef, useEffect } from "react";
+import { Activity, Eraser } from "lucide-react";
+
+const API = "http://localhost:8000";
+
 export const TerminalView = memo(function TerminalView({ logs, isRunning, setLogs }: { logs: string[]; isRunning: boolean; setLogs?: (logs: string[]) => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
