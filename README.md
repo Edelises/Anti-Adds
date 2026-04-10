@@ -44,26 +44,40 @@ pip3 install pyautogui opencv-python pytesseract fastapi uvicorn pillow pyinstal
 
 ---
 
-## 🚀 Reactivation Guide (If you exported/cloned the repo)
+## 🚀 Reactivation Guide (If you download/clone on a new computer)
 
-**IMPORTANT**: Due to repository size limits, the compiled **Python Sidecar Binary** is NOT included in the GitHub export. You MUST rebuild the engine logic before the app will function.
+If you pull this codebase onto a brand new MacBook or rename the folder, follow this exact sequence to ensure both the Python Backend and the Tauri Rust engine sync correctly:
 
-### 1. Rebuild the Detection Core
-Navigate to the project root and execute the bundling script:
+### 1. Install System Dependencies
+Ensure you have Node.js, Python, and the necessary macOS packages installed.
 ```bash
-./build_standalone.sh
-```
-*This identifies your architecture (Intel or Apple Silicon), compiles the Python backend into a standalone native binary, and moves it to `web/src-tauri/`.*
+# Brew packages
+brew install tesseract node python
 
-### 2. Initialize Frontend
+# Python dependencies
+pip3 install pyautogui opencv-python pytesseract fastapi uvicorn pillow --break-system-packages
+```
+
+### 2. Install Node Packages
+Initialize the web dependencies. From the project root, run:
 ```bash
 cd web
 npm install
+cd ..
 ```
 
-### 3. Launch Development Mode
+### 3. Wipe Rust Cache (CRITICAL IF YOU RENAMED THE FOLDER)
+If you renamed the parent folder after downloading, Tauri's Rust compiler will fatally crash (`OS error 2`) because it caches old absolute paths. Run this to nuke the corrupted cache:
 ```bash
-npm run dev
+cd web/src-tauri
+cargo clean
+cd ../..
+```
+
+### 4. Launch the Engine 
+Finally, use the universal shortcut from the **project root** to safely boot both the Python server and the Desktop UI simultaneously:
+```bash
+npm run desktop
 ```
 
 ---
