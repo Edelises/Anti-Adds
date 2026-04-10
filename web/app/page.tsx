@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, memo } from "react";
 import { 
   Activity, Smartphone, 
-  Cpu, Zap, Globe, Eraser
+  Cpu, Zap, Globe, Eraser, RefreshCw, Power
 } from "lucide-react";
 import { TerminalView } from "./TerminalView";
 
@@ -22,6 +22,37 @@ export default function Dashboard() {
   const [adsClosed, setAdsClosed] = useState(0);
   const lastLogCountRef = useRef(0);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleRestart = async () => {
+    if (!confirm("Fully restart backend engine and refresh interface?")) return;
+    
+    try {
+      setLogs(prev => [...prev, "[SYSTEM] Restarting Core Services..."]);
+      await fetch(`${API}/restart`, { method: "POST" });
+      
+      // Give the backend time to die and uvicorn/host to reboot it
+      setTimeout(() => {
+        window.location.reload();
+      }, 2500);
+    } catch (err) {
+      // If it fails, the backend might already be down or restarting
+      window.location.reload();
+    }
+  };
+
+  const handleShutdown = async () => {
+    if (!confirm("Permanently shutdown backend engine? Interface will go offline.")) return;
+    
+    try {
+      setLogs(prev => [...prev, "[SYSTEM] Terminating Backend Engine..."]);
+      await fetch(`${API}/shutdown`, { method: "POST" });
+      setIsConnected(false);
+      setIsRunning(false);
+      setLogs(prev => [...prev, "🛑 SYSTEM OFFLINE"]);
+    } catch (err) {
+      console.error("Shutdown failed:", err);
+    }
+  };
 
   // Advanced Configs (Sync with backend if needed, for now UI handles local state)
   const [autoClick, setAutoClick] = useState(true);
@@ -148,14 +179,38 @@ export default function Dashboard() {
             </button>
           </nav>
           
-          <button
-            onClick={toggleAutomation}
-            disabled={!isConnected}
-            data-tooltip={isRunning ? "Terminate Automation" : "Initialize Engine"}
-            className={`h-9 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${!isConnected ? "opacity-20" : isRunning ? "bg-red-500/10 text-red-500 border border-red-500/20" : "bg-white text-black hover:scale-105 active:scale-95"}`}
-          >
-            {isRunning ? "Stop" : "Run"}
-          </button>
+        {/* System Controls Group */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-white/[0.03] border border-white/[0.05] p-1 rounded-2xl gap-1">
+            <button
+              onClick={toggleAutomation}
+              disabled={!isConnected}
+              data-tooltip={isRunning ? "Terminate Engine" : "Ignite Engine"}
+              className={`h-9 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                !isConnected ? "opacity-20 cursor-not-allowed" : 
+                isRunning ? "bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] text-black" : 
+                "hover:bg-white/10 text-white/40"
+              }`}
+            >
+              {isRunning ? "ACTIVE" : "STANDBY"}
+            </button>
+
+            <button
+              onClick={handleRestart}
+              data-tooltip="Hot Restart"
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-white/20 hover:text-white transition-all active:scale-95"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handleShutdown}
+              data-tooltip="Kill Process"
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-red-500/10 text-white/20 hover:text-red-500 transition-all active:scale-95"
+            >
+              <Power className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -220,6 +275,7 @@ export default function Dashboard() {
           </button>
           <p className="text-[8px] font-bold text-white/60 uppercase px-1">Terminal<br/>Link</p>
         </div>
+
       </aside>
 
       {/* ── RIGHT SIDEBAR: TELEMETRY ── */}

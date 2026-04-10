@@ -164,6 +164,7 @@ state = {
     "iphone_window_id": None,       # CGWindowID for direct capture
     "mirror_roi": None,             # (x, y, w, h) logical points (kept for ad detection)
     "logs": deque(maxlen=50),       # Rolling log buffer — last 50 entries
+    "ads_closed": 0,                # Number of ads intercepted
     "config": {
         "threshold": 0.75,          # Template matching confidence (0.0-1.0)
         "jitter": 5,                # Click offset randomness in pixels
@@ -271,6 +272,34 @@ def clear_logs():
     state["logs"].clear()
     add_log("🧹 Logs cleared by user")
     return {"status": "success"}
+
+
+@app.post("/restart")
+def restart_system():
+    """Immediately shut down the backend so it can be restarted by the host process."""
+    add_log("🔄 CRITICAL: System Restart Initiated...")
+    
+    def kill_soon():
+        time.sleep(1.0)
+        logging.info("RESTART: Process-level termination triggered.")
+        os._exit(0)
+    
+    threading.Thread(target=kill_soon).start()
+    return {"status": "restarting", "message": "Backend shutting down..."}
+
+
+@app.post("/shutdown")
+def shutdown_system():
+    """Permanent shutdown of the backend process."""
+    add_log("🛑 CRITICAL: Permanent Shutdown Initiated...")
+    
+    def kill_soon():
+        time.sleep(1.0)
+        logging.info("SHUTDOWN: Process termination triggered.")
+        os._exit(0)
+    
+    threading.Thread(target=kill_soon).start()
+    return {"status": "offline", "message": "Backend terminated."}
 
 
 @app.get("/config")
@@ -409,6 +438,7 @@ def automation_loop():
                 if auto_click:
                     add_log(f"🎯 Targeted: {label} at {found}")
                     clicker.click_at(*found, jitter=jitter)
+                    state["ads_closed"] += 1
                     # Long sleep after click to allow UI to settle/animation to finish
                     time.sleep(2.5)
                 else:
