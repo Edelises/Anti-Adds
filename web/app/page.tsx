@@ -40,11 +40,22 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const lastLog = status?.logs?.[status.logs.length - 1] || "";
+  
   useEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    const el = logContainerRef.current;
+    if (!el) return;
+    
+    // Only auto-scroll if user is already naturally at the bottom (or close to it)
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    
+    if (isNearBottom) {
+       // requestAnimationFrame guarantees the DOM painted the newest log
+       requestAnimationFrame(() => {
+         el.scrollTop = el.scrollHeight;
+       });
     }
-  }, [status?.logs]);
+  }, [lastLog]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const toggleAutomation = () => fetch(`${API}/toggle`, { method: "POST" });
